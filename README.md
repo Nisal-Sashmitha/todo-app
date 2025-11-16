@@ -1,70 +1,47 @@
-# Getting Started with Create React App
+# TimeBoxer
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+TimeBoxer is a lightweight Electron + React desktop app for time blocking and focused planning. Everything is stored locally (via `localStorage` inside the renderer), so no account or network is required.
 
-## Available Scripts
+## Getting started
 
-In the project directory, you can run:
+```bash
+npm install
+npm run dev # starts Vite + Electron
+```
 
-### `npm start`
+The dev script spins up Vite on port `5173` and launches Electron once the renderer is ready. Use `npm run build` followed by `npm start` to run the production renderer inside Electron after bundling.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+> **Note**: Packaging installers is outside of this example, but tools like `electron-builder` can be added easily.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## Scripts
 
-### `npm test`
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Runs Vite and Electron side by side for live development |
+| `npm run build` | Builds the renderer using Vite |
+| `npm start` | Starts Electron in production mode using the built renderer |
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Architecture overview
 
-### `npm run build`
+- **Electron shell** (`electron/main.js`) bootstraps a `BrowserWindow` and loads the Vite dev server or the production `dist/index.html`.
+- **React + Vite** live in `src/`. The UI uses Tailwind CSS for styling and `react-beautiful-dnd` for drag-and-drop interactions.
+- **State management** is powered by Zustand (`src/store/useTimeboxStore.ts`). The store keeps tasks, per-day schedules, and the selected date. Zustand's `persist` middleware stores the entire tree inside `localStorage` for a local-only experience.
+- **Drag & drop**: tasks in the to-do list can be dragged into the hourly timeline. Existing blocks can also be dragged between time slots to reposition them.
+- **Persistence**: because the state is stored with `localStorage`, every change (tasks, schedules, analytics inputs) is automatically saved.
+- **Analytics** are computed on the fly (`src/utils/analytics.ts`) for the currently selected day and surfaced in the `AnalyticsPanel`.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Feature highlights
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- Maintain a categorized to-do list (Work / Personal / Urgent) with drag-and-drop onto the day view.
+- Resizable / movable blocks in a simple hourly lane with visual category cues.
+- Quick controls to mark blocks as completed, pending, or carry unfinished work to the next day.
+- One-click carry-forward button to duplicate unfinished blocks onto tomorrow while marking today’s blocks as `carriedForward`.
+- Real-time analytics: total hours scheduled, completed hours, completion counts, and a friendly productivity insight.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Data model
 
-### `npm run eject`
+- `Task` – global to-do items with category metadata.
+- `DaySchedule` – stores the blocks scheduled for a specific ISO date.
+- `Block` – links a task to a start/end time, status, and optional `carriedFromDate` metadata.
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+All of this state lives in the persisted Zustand store and is serialized to a single JSON blob in `localStorage`.
